@@ -1,3 +1,4 @@
+import java.util.Random;
 
 public class GameLogicTest implements IGameLogic {
     private int x = 0;
@@ -17,33 +18,50 @@ public class GameLogicTest implements IGameLogic {
     }
 	
     public Winner gameFinished() {
-        //TODO Write your implementation for this method
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+
+            }
+        }
         return Winner.NOT_FINISHED;
     }
 
 
     public void insertCoin(int column, int playerID) {
-
-        if(updateBoard(column, playerID)){
+        if(updateBoard(gameBoard, column, playerID)){
             System.out.println("column " + column + " playerID " + playerID);
         }
+        if (playerID == this.playerID){
+
+        }
+
         //TODO Write your implementation for this method	
     }
 
     public int decideNextMove() {
-        //TODO Write your implementation for this method
-        return 0;
+        int col = 0;
+        Random rand = new Random();
+        while(isFull(col)) {
+            col = rand.nextInt(x);
+        }
+
+        return col;
     }
-    private boolean updateBoard(int col, int player){
+    private boolean isFull(int column){
+        return gameBoard[column][y-1] != 0;
+    }
+    private boolean updateBoard(int[][] board, int col, int player){
         if(col == -1) {
             return false;
         }
-        if (gameBoard[col][0] != 0) {
+        if (board[col][0] != 0) {
             return false;
         }
-        int r = gameBoard[col].length-1;
-        while(gameBoard[col][r]!=0) r--;
-        gameBoard[col][r]=player;
+        int r = board[col].length-1;
+        while(board[col][r]!=0) r--;
+        board[col][r]=player;
         return true;
     }
+
+
 }

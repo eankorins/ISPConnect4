@@ -1,3 +1,4 @@
+import java.util.Random;
 
 public class GameLogic implements IGameLogic {
     private int x = 0;
@@ -31,8 +32,16 @@ public class GameLogic implements IGameLogic {
     }
 
     public int decideNextMove() {
-        //TODO Write your implementation for this method
-        return 0;
+        int col = 0;
+        Random rand = new Random();
+        while(isFull(col)) {
+            col = rand.nextInt(x);
+        }
+
+        return col;
+    }
+    private boolean isFull(int column){
+        return gameBoard[column][y-1] != 0;
     }
     private boolean updateBoard(int col, int player){
         if(col == -1) {
