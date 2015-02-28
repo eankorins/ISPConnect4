@@ -17,87 +17,21 @@ public class GameLogic implements IGameLogic {
         //TODO Write your implementation for this method
     }
     public Winner gameFinished() {
-        int player1CountX = 0;
-        int player1CountY = 0;
-        //ArrayList<GamePosition> player1Diags = new ArrayList<>();
-        //int player1CountDPos = 0;
-        //int player1CountDNeg = 0;
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+                if(gameBoard[col][row] != 0){
+                    Winner winner = diagonalCheck(gameBoard, col, row);
+                    if(!winner.equals(Winner.NOT_FINISHED)){
 
-        int player2CountX = 0;
-        int player2CountY = 0;
-        //ArrayList<GamePosition> player2Diags = new ArrayList<>();
-        //int player2CountDPos = 0;
-        //int player2CountDNeg = 0;
-
-        for (int i = 0; i < gameBoard.length; i++) {
-            for (int j = 0; j < gameBoard[i].length; j++) {
-
-                if (gameBoard[i][j] == 1) {
-                    player1CountX++;
-                    //player1CountDPos++;
-                    //player1CountDNeg++;
-                    player2CountX = 0;
-
-                    if (player1CountX == 4) {
-                        return Winner.PLAYER1;
+                        System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
+                        return winner;
                     }
-
-                } else if (gameBoard[i][j] == 2) {
-                    player2CountX++;
-                    player1CountX = 0;
-
-                    if (player2CountY == 4) {
-                        return Winner.PLAYER2;
-                    }
-                } else if (gameBoard[i][j] == 0){
-                    player1CountX = 0;
-                    player2CountX = 0;
-                }
-
-                if (gameBoard[i][j] == 1) {
-                    player1CountY++;
-                    player2CountY = 0;
-
-                    if (player1CountY == 4) {
-                        return Winner.PLAYER1;
-                    }
-
-                } else if (gameBoard[i][j] == 2) {
-                    player2CountY++;
-                    player1CountY = 0;
-
-                    if (player2CountY == 4) {
-                        return Winner.PLAYER2;
-                    }
-                } else if (gameBoard[i][j] == 0) {
-                    player1CountY = 0;
-                    player2CountY = 0;
                 }
             }
-            player1CountX = 0;
-            player2CountX = 0;
-
-            player1CountY = 0;
-            player2CountY = 0;
         }
 
         return Winner.NOT_FINISHED;
     }
-//    public Winner gameFinished() {
-//        for(int col = 0; col < x; col++){
-//            for(int row = 0; row < y; row++){
-//                if(gameBoard[col][row] != 0){
-//                    Winner winner = diagonalCheck(gameBoard, col, row);
-//                    if(!winner.equals(Winner.NOT_FINISHED)){
-//
-//                        System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
-//                    }
-//                }
-//            }
-//        }
-//
-//        return Winner.NOT_FINISHED;
-//    }
 
 
     public void insertCoin(int column, int playerID) {
@@ -119,6 +53,35 @@ public class GameLogic implements IGameLogic {
     }
 
     private Winner diagonalCheck(int[][] board, int col, int row){
+        //Vertical
+        if(row <= y - 4){
+            int player = board[col][row];
+            int counter = 0;
+            for(int i = 0; i < 4; i++){
+                if(board[col][row+i] == player){
+                    counter++;
+                }
+                else
+                    break;
+            }
+            if(counter == 4){
+                return player == 1 ? Winner.PLAYER1 : Winner.PLAYER2;
+            }
+        }
+        if(col <= x - 4){
+            int player = board[col][row];
+            int counter = 0;
+            for(int i = 0; i < 4; i++){
+                if(board[col+i][row] == player){
+                    counter++;
+                }
+                else
+                    break;
+            }
+            if(counter == 4){
+                return player == 1 ? Winner.PLAYER1 : Winner.PLAYER2;
+            }
+        }
         //Right Check
         if(col <= x - 4 && row <= y - 4){
             int player = board[col][row];
