@@ -1,3 +1,5 @@
+import javafx.util.Pair;
+
 import java.util.*;
 
 public class GameLogic implements IGameLogic {
@@ -9,7 +11,7 @@ public class GameLogic implements IGameLogic {
     public GameLogic() {
         //TODO Write your implementation for this method
     }
-	
+
     public void initializeGame(int x, int y, int playerID) {
         this.x = x;
         this.y = y;
@@ -57,16 +59,26 @@ public class GameLogic implements IGameLogic {
             System.out.println("column " + column + " playerID " + playerID);
             printBoard();
         }
-        //TODO Write your implementation for this method	
+        //TODO Write your implementation for this method
     }
 
     public int decideNextMove() {
-        int col = 0;
-        Random rand = new Random();
-        while(isFull(col)) {
-            col = rand.nextInt(x);
+        List<Action> actions = new ArrayList<Action>();
+        int opponent = playerID == 1 ? 2 : 1;
+        int[][] clonedBoard = gameBoard.clone();
+        for(Integer action : availableActions(clonedBoard)){
+            updateBoard(clonedBoard, action, playerID);
+            actions.add(new Action(action, minValue(clonedBoard.clone(), action, opponent, 0).getScore()));
         }
-        return col;
+        Action bestAction = null;
+        int bestScore = 0;
+        for(Action action : actions){
+            if(action.getScore() > bestScore){
+                bestScore = action.getScore();
+                bestAction = action;
+            }
+        }
+        return bestAction.getAction();
     }
 
     private Winner diagonalCheck(int[][] board, int col, int row){
@@ -140,67 +152,85 @@ public class GameLogic implements IGameLogic {
             System.out.print("\n");
         }
     }
-    private int minValue(int[][] state, int playerID, int d){
-        Winner winner = gameFinished(state);
+    private Action minValue(int[][] state, int a, int playerID, int d){
         int opponent = playerID == 1 ? 2 : 1;
         if(d == cutoff){
-            return eval(state, playerID);
-        }
-        else{
-            List<Integer> values = new ArrayList<Integer>();
-            for(Integer action : availableActions(state)){
-                updateBoard(state, action, opponent);
-                values.add(maxValue(state.clone(), opponent, d+1));
-            }
-            return Collections.min(values);
-        }
-    }
-
-    private int maxValue(int[][] state, int playerID, int d){
-        Winner winner = gameFinished(state);
-        int opponent = playerID == 1 ? 2 : 1;
-        if(d == cutoff){
-            return eval(state, playerID);
+            return new Action(a, eval(state, playerID));
         } else {
-            List<Integer> values = new ArrayList<Integer>();
+            List<Action> actions = new ArrayList<Action>();
             for(Integer action : availableActions(state)){
-                updateBoard(state, action, opponent);
-                values.add(minValue(state.clone(), opponent, d+1));
+                updateBoard(state, action, playerID);
+                actions.add(new Action(action, maxValue(state.clone(), action, opponent, d + 1).getScore()));
             }
-            return Collections.max(values);
+            Action bestAction = null;
+            int bestScore = 0;
+            for(Action action : actions){
+                if(action.getScore() < bestScore){
+                    bestScore = action.getScore();
+                    bestAction = action;
+                }
+            }
+            return bestAction;
+
         }
     }
-    private int utilityValue(int[][] state, Winner winner){
 
-        if(winner.equals(Winner.PLAYER1)){
-            if(this.playerID == 1){
-                return 1;
+    private Action maxValue(int[][] state, int a, int playerID, int d){
+        int opponent = playerID == 1 ? 2 : 1;
+        if(d == cutoff){
+            return new Action(a, eval(state, playerID));
+        } else {
+            List<Action> actions = new ArrayList<Action>();
+            for(Integer action : availableActions(state)){
+                updateBoard(state, action, playerID);
+                actions.add(new Action(action, minValue(state.clone(), action, opponent, d + 1).getScore()));
             }
-            else{
-                return -1;
+            Action bestAction = null;
+            int bestScore = 0;
+            for(Action action : actions){
+                if(action.getScore() > bestScore){
+                    bestScore = action.getScore();
+                    bestAction = action;
+                }
             }
+            return bestAction;
         }
-        else if(winner.equals(Winner.PLAYER2)){
-            if(this.playerID == 2){
-                return 1;
-            }
-            else{
-                return -1;
-            }
-        }
-        else{
-            return 0;
-        }
-
-
-
     }
-
     private int eval(int[][] state, int player){
+        List<Integer> scores = new ArrayList<Integer>();
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+                if(state[col][row] == player){
+                    scores.add(countVertical(state, col, row, player));
+                }
+            }
+        }
+        int total = 0;
+        for(Integer score : scores){
+            total += score;
+        }
+        return total;
+    }
+
+    private int countVertical(int[][] state, int col, int row, int player){
+        int score = 1;
+        if(state[col][row] == player){
+            int next = row + 1;
+            while(next < y){
+                if(state[col][next] == player){
+                    score *= 2;
+                }
+                else{
+                    score = 0;
+                }
+            }
+        }
+        return score;
+    }
+    private int countHorizontal(int[][] state, int col, int row, int player){
 
         return 0;
     }
-
 
     private boolean isFull(int column){
         return gameBoard[column][0] != 0;
@@ -226,5 +256,23 @@ public class GameLogic implements IGameLogic {
             }
         }
         return actions;
+    }
+
+    private class Action{
+        private int action;
+        private Integer score;
+
+        public Action(int action, int score){
+            this.score = score;
+            this.action = action;
+        }
+
+        public Integer getScore(){
+            return score;
+        }
+        public int getAction(){
+            return action;
+        }
+
     }
 }
