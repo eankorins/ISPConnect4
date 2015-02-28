@@ -4,6 +4,7 @@ public class GameLogic implements IGameLogic {
     private int x = 0;
     private int y = 0;
     private int playerID;
+    private int cutoff;
     private int[][] gameBoard;
     public GameLogic() {
         //TODO Write your implementation for this method
@@ -13,6 +14,7 @@ public class GameLogic implements IGameLogic {
         this.x = x;
         this.y = y;
         this.playerID = playerID;
+        this.cutoff = 5;
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
@@ -32,7 +34,22 @@ public class GameLogic implements IGameLogic {
 
         return Winner.NOT_FINISHED;
     }
+    public Winner gameFinished(int[][] board) {
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+                if(gameBoard[col][row] != 0){
+                    Winner winner = diagonalCheck(board, col, row);
+                    if(!winner.equals(Winner.NOT_FINISHED)){
 
+                        System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
+                        return winner;
+                    }
+                }
+            }
+        }
+
+        return Winner.NOT_FINISHED;
+    }
 
     public void insertCoin(int column, int playerID) {
 
@@ -123,61 +140,67 @@ public class GameLogic implements IGameLogic {
             System.out.print("\n");
         }
     }
-//    private int minValue(int[][] state, int playerID){
-//        Winner winner = gameFinished();
-//        int opponent = playerID == 1 ? 2 : 1;
-//        if(!winner.equals(Winner.NOT_FINISHED)){
-//            return utilityValue(state, winner);
-//        }
-//        else{
-//            List<Integer> values = new ArrayList<Integer>();
-//            for(Integer action : availableActions(state)){
-//                updateBoard(state, action, opponent);
-//                values.add(maxValue(state.clone(), opponent));
-//            }
-//            return Collections.max(values);
-//        }
-//    }
-//    private int maxValue(int[][] state, int playerID){
-//        Winner winner = gameFinished();
-//        int opponent = playerID == 1 ? 2 : 1;
-//        if(!winner.equals(Winner.NOT_FINISHED)){
-//            return utilityValue(state, winner);
-//        }
-//        else{
-//            List<Integer> values = new ArrayList<Integer>();
-//            for(Integer action : availableActions(state)){
-//                updateBoard(state, action, opponent);
-//                values.add(minValue(state.clone(), opponent));
-//            }
-//            return Collections.min(values);
-//        }
-//    }
-//    private int utilityValue(int[][] state, Winner winner){
-//
-//        if(winner.equals(Winner.PLAYER1)){
-//            if(this.playerID == 1){
-//                return 1;
-//            }
-//            else{
-//                return -1;
-//            }
-//        }
-//        else if(winner.equals(Winner.PLAYER2)){
-//            if(this.playerID == 2){
-//                return 1;
-//            }
-//            else{
-//                return -1;
-//            }
-//        }
-//        else{
-//            return 0;
-//        }
-//
-//
-//
-//    }
+    private int minValue(int[][] state, int playerID, int d){
+        Winner winner = gameFinished(state);
+        int opponent = playerID == 1 ? 2 : 1;
+        if(d == cutoff){
+            return eval(state, playerID);
+        }
+        else{
+            List<Integer> values = new ArrayList<Integer>();
+            for(Integer action : availableActions(state)){
+                updateBoard(state, action, opponent);
+                values.add(maxValue(state.clone(), opponent, d+1));
+            }
+            return Collections.min(values);
+        }
+    }
+
+    private int maxValue(int[][] state, int playerID, int d){
+        Winner winner = gameFinished(state);
+        int opponent = playerID == 1 ? 2 : 1;
+        if(d == cutoff){
+            return eval(state, playerID);
+        } else {
+            List<Integer> values = new ArrayList<Integer>();
+            for(Integer action : availableActions(state)){
+                updateBoard(state, action, opponent);
+                values.add(minValue(state.clone(), opponent, d+1));
+            }
+            return Collections.max(values);
+        }
+    }
+    private int utilityValue(int[][] state, Winner winner){
+
+        if(winner.equals(Winner.PLAYER1)){
+            if(this.playerID == 1){
+                return 1;
+            }
+            else{
+                return -1;
+            }
+        }
+        else if(winner.equals(Winner.PLAYER2)){
+            if(this.playerID == 2){
+                return 1;
+            }
+            else{
+                return -1;
+            }
+        }
+        else{
+            return 0;
+        }
+
+
+
+    }
+
+    private int eval(int[][] state, int player){
+
+        return 0;
+    }
+
 
     private boolean isFull(int column){
         return gameBoard[column][0] != 0;
