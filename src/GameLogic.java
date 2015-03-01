@@ -27,7 +27,7 @@ public class GameLogic implements IGameLogic {
                     Winner winner = diagonalCheck(gameBoard, col, row);
                     if(!winner.equals(Winner.NOT_FINISHED)){
 
-                        System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
+                        //System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
                         return winner;
                     }
                 }
@@ -39,11 +39,11 @@ public class GameLogic implements IGameLogic {
     public Winner gameFinished(int[][] board) {
         for(int col = 0; col < x; col++){
             for(int row = 0; row < y; row++){
-                if(gameBoard[col][row] != 0){
+                if(board[col][row] != 0){
                     Winner winner = diagonalCheck(board, col, row);
                     if(!winner.equals(Winner.NOT_FINISHED)){
 
-                        System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
+                        //System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
                         return winner;
                     }
                 }
@@ -57,28 +57,147 @@ public class GameLogic implements IGameLogic {
 
         if(updateBoard(gameBoard, column, playerID)){
             System.out.println("column " + column + " playerID " + playerID);
-            printBoard();
+            printBoard(gameBoard);
         }
         //TODO Write your implementation for this method
     }
 
     public int decideNextMove() {
+
         List<Action> actions = new ArrayList<Action>();
-        int opponent = playerID == 1 ? 2 : 1;
-        int[][] clonedBoard = gameBoard.clone();
-        for(Integer action : availableActions(clonedBoard)){
-            updateBoard(clonedBoard, action, playerID);
-            actions.add(new Action(action, minValue(clonedBoard.clone(), action, opponent, 0).getScore()));
+        List<Integer> availableActions =  availableActions(gameBoard);
+        for(Integer action : availableActions){
+            int[][] newState = result(gameBoard, action, playerID);
+            actions.add(new Action(action, maxValue(newState, action, playerID, 0).getScore()));
         }
-        Action bestAction = null;
-        int bestScore = 0;
+        Action bestAction = new Action(availableActions.get(0), Integer.MAX_VALUE);
         for(Action action : actions){
-            if(action.getScore() > bestScore){
-                bestScore = action.getScore();
+            if(action.getScore() < bestAction.getScore()){
                 bestAction = action;
             }
         }
+        System.out.println("Choosing column: " + bestAction.getAction() + " with score: " + bestAction.getScore());
         return bestAction.getAction();
+    }
+
+
+
+    private void printBoard(int[][] board){
+        for(int row = 0; row < y; row++){
+            for(int col = 0; col < x; col++){
+                System.out.print(board[col][row] + " ");
+            }
+            System.out.print("\n");
+        }
+    }
+    private Action minValue(int[][] state, int a, int player, int d){
+        int opponent = player == 1 ? 2 : 1;
+        Winner winner = gameFinished(state);
+        if(!winner.equals(Winner.NOT_FINISHED)){
+            if(winner.equals(Winner.PLAYER1)){
+                if(player == 1){
+                    return new Action(a, -1000 / d);
+                }
+                else{
+                    return new Action(a,1000/ d);
+                }
+            }
+            else if(winner.equals(Winner.PLAYER2)){
+                if(player == 2){
+                    return new Action(a, -1000 / d);
+                }
+                else{
+                    return new Action(a,1000 / d);
+                }
+            }
+            else{
+                return new Action(a, 0);
+            }
+        }
+        if(d == cutoff ){
+            int score = eval(state, player);
+            return new Action(a, score);
+        } else {
+            List<Action> actions = new ArrayList<Action>();
+            List<Integer> availableActions =  availableActions(state);
+            for(Integer action : availableActions){
+                int[][] newState = result(state, action, player);
+                actions.add(new Action(action, maxValue(newState, action, opponent, d + 1).getScore()));
+            }
+            Action bestAction = new Action(availableActions.get(0), Integer.MAX_VALUE);
+            for(Action action : actions){
+                if(action.getScore() < bestAction.getScore()){
+                    bestAction = action;
+                }
+            }
+            //System.out.println(bestAction);
+            return bestAction;
+
+        }
+    }
+
+    private Action maxValue(int[][] state, int a, int player, int d){
+        int opponent = player == 1 ? 2 : 1;
+        Winner winner = gameFinished(state);
+        if(!winner.equals(Winner.NOT_FINISHED)){
+            if(winner.equals(Winner.PLAYER1)){
+                if(player == 1){
+                    return new Action(a, 1000 / d);
+                }
+                else{
+                    return new Action(a,-1000/ d);
+                }
+            }
+            else if(winner.equals(Winner.PLAYER2)){
+                if(player == 2){
+                    return new Action(a, 1000 / d);
+                }
+                else{
+                    return new Action(a,-1000 / d);
+                }
+            }
+            else{
+                return new Action(a, 0);
+            }
+        }
+        if(d == cutoff){
+            return new Action(a, -eval(state, player));
+        } else {
+            List<Action> actions = new ArrayList<Action>();
+            List<Integer> availableActions =  availableActions(state);
+            for(Integer action : availableActions){
+                int[][] newState = result(state, action, player);
+                actions.add(new Action(action, minValue(newState, action, opponent, d + 1).getScore()));
+            }
+            Action bestAction = new Action(availableActions.get(0), Integer.MIN_VALUE);
+            for(Action action : actions){
+                if(action.getScore() > bestAction.getScore()){
+                    bestAction = action;
+                }
+            }
+            //System.out.println(bestAction);
+            return bestAction;
+        }
+    }
+
+    private int eval(int[][] state, int player){
+        List<Integer> scores = new ArrayList<Integer>();
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+                if(state[col][row] == player){
+                    scores.add(countVertical(state, col, row, player));
+                    scores.add(countHorizontal(state, col, row, player));
+                }
+            }
+        }
+        int total = 0;
+        for(Integer score : scores){
+            total += score;
+        }
+//        System.out.println("Eval score for player " + player + " is: " + total + " for board:");
+//        printBoard(state);
+        System.out.println("Score: " + total + " For " + player);
+        return total;
     }
 
     private Winner diagonalCheck(int[][] board, int col, int row){
@@ -143,93 +262,37 @@ public class GameLogic implements IGameLogic {
         }
         return Winner.NOT_FINISHED;
     }
-
-    private void printBoard(){
-        for(int row = 0; row < y; row++){
-            for(int col = 0; col < x; col++){
-                System.out.print(gameBoard[col][row] + " ");
-            }
-            System.out.print("\n");
-        }
-    }
-    private Action minValue(int[][] state, int a, int playerID, int d){
-        int opponent = playerID == 1 ? 2 : 1;
-        if(d == cutoff){
-            return new Action(a, eval(state, playerID));
-        } else {
-            List<Action> actions = new ArrayList<Action>();
-            for(Integer action : availableActions(state)){
-                updateBoard(state, action, playerID);
-                actions.add(new Action(action, maxValue(state.clone(), action, opponent, d + 1).getScore()));
-            }
-            Action bestAction = null;
-            int bestScore = 0;
-            for(Action action : actions){
-                if(action.getScore() < bestScore){
-                    bestScore = action.getScore();
-                    bestAction = action;
-                }
-            }
-            return bestAction;
-
-        }
-    }
-
-    private Action maxValue(int[][] state, int a, int playerID, int d){
-        int opponent = playerID == 1 ? 2 : 1;
-        if(d == cutoff){
-            return new Action(a, eval(state, playerID));
-        } else {
-            List<Action> actions = new ArrayList<Action>();
-            for(Integer action : availableActions(state)){
-                updateBoard(state, action, playerID);
-                actions.add(new Action(action, minValue(state.clone(), action, opponent, d + 1).getScore()));
-            }
-            Action bestAction = null;
-            int bestScore = 0;
-            for(Action action : actions){
-                if(action.getScore() > bestScore){
-                    bestScore = action.getScore();
-                    bestAction = action;
-                }
-            }
-            return bestAction;
-        }
-    }
-    private int eval(int[][] state, int player){
-        List<Integer> scores = new ArrayList<Integer>();
-        for(int col = 0; col < x; col++){
-            for(int row = 0; row < y; row++){
-                if(state[col][row] == player){
-                    scores.add(countVertical(state, col, row, player));
-                }
-            }
-        }
-        int total = 0;
-        for(Integer score : scores){
-            total += score;
-        }
-        return total;
-    }
-
     private int countVertical(int[][] state, int col, int row, int player){
         int score = 1;
         if(state[col][row] == player){
-            int next = row + 1;
-            while(next < y){
-                if(state[col][next] == player){
+            int next = row - 1;
+            while(next >= 0){
+                if(state[col][next] == player) {
                     score *= 2;
                 }
                 else{
-                    score = 0;
+                    score /= 2;
                 }
+                next--;
             }
         }
         return score;
     }
     private int countHorizontal(int[][] state, int col, int row, int player){
-
-        return 0;
+        int score = 1;
+        if(state[col][row] == player){
+            int next = col + 1;
+            while(next < x){
+                if(state[next][row] == player) {
+                    score *= 2;
+                }
+                else{
+                    score /= 2;
+                }
+                next++;
+            }
+        }
+        return score;
     }
 
     private boolean isFull(int column){
@@ -247,17 +310,25 @@ public class GameLogic implements IGameLogic {
         board[col][r]=player;
         return true;
     }
-
     private List<Integer> availableActions(int[][] board){
         List<Integer> actions = new ArrayList<Integer>();
         for(int col = 0; col < board.length; col++){
-            if(board[col][0] != 0){
+            if(board[col][0] == 0){
                 actions.add(col);
             }
         }
         return actions;
     }
-
+    private int[][] result(int[][] state, int column, int player){
+        int[][] newState = new int[x][y];
+        for(int col = 0; col < x; col++){
+            for(int row = 0; row < y; row++){
+                newState[col][row] = state[col][row];
+            }
+        }
+        updateBoard(newState, column, player);
+        return newState;
+    }
     private class Action{
         private int action;
         private Integer score;
