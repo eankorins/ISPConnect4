@@ -68,7 +68,7 @@ public class GameLogic implements IGameLogic {
         List<Integer> availableActions =  availableActions(gameBoard);
         for(Integer action : availableActions){
             int[][] newState = result(gameBoard, action, playerID);
-            actions.add(new Action(action, maxValue(newState, action, playerID, 0).getScore()));
+            actions.add(new Action(action, minValue(newState, action, playerID, 0).getScore()));
         }
         Action bestAction = new Action(availableActions.get(0), Integer.MAX_VALUE);
         for(Action action : actions){
