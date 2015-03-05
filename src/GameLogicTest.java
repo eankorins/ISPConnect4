@@ -1,7 +1,7 @@
 
 import java.util.*;
 
-public class GameLogic implements IGameLogic {
+public class GameLogicTest implements IGameLogic {
     private int x = 0;
     private int y = 0;
     private int playerID;
@@ -9,7 +9,7 @@ public class GameLogic implements IGameLogic {
     private int cutoff;
     private int turns;
     private int[][] gameBoard;
-    public GameLogic() {
+    public GameLogicTest() {
         //TODO Write your implementation for this method
     }
 
