@@ -18,7 +18,7 @@ public class GameLogic implements IGameLogic {
         this.y = y;
         this.playerID = playerID;
         this.opponent = playerID == 1 ? 2 : 1;
-        this.cutoff = 7;
+        this.cutoff = 8;
         gameBoard = new int[x][y];
         //TODO Write your implementation for this method
     }
@@ -97,7 +97,7 @@ public class GameLogic implements IGameLogic {
             return utility(winner);
         }
         if(d == cutoff ){
-            return eval(state, playerID) - eval(state, opponent);
+            return eval(state, playerID);
         } else {
             for(Integer action : availableActions(state)){
                 int[][] newState = result(state, action, playerID);
@@ -119,7 +119,7 @@ public class GameLogic implements IGameLogic {
             return utility(winner);
         }
         if(d == cutoff ){
-            return eval(state, playerID) - eval(state, opponent);
+            return eval(state, playerID);
         } else {
             for(Integer action : availableActions(state)){
                 int[][] newState = result(state, action, opponent);
@@ -168,6 +168,19 @@ public class GameLogic implements IGameLogic {
         for(int row = 0; row < y; row++) {
             countHorizontal(state, scoringMatrix, row, playerID);
         }
+
+        //For collumn [0] && [x-1] y-4 iterations
+        for(int row = y - 1; row > y-4; row--){
+            countDiagonalRight(state,scoringMatrix, 0, row, playerID);
+            countDiagonalLeft(state, scoringMatrix, x-1, row, playerID);
+        }
+        for(int col = 1; col < x - 4; col++){
+            countDiagonalRight(state,scoringMatrix, col, y - 1, playerID);
+        }
+        for(int col = x-1; col > 3; col--){
+            countDiagonalLeft(state, scoringMatrix, col, y - 1, playerID);
+        }
+        //Remaining Column Diagonals from row y
 //        System.out.println("Eval score for player " + player + " is: " + total + " for board:");
 //        printBoard(state);
         //System.out.println("Score: " + total + " For " + player);
@@ -209,7 +222,7 @@ public class GameLogic implements IGameLogic {
                 return player == 1 ? Winner.PLAYER1 : Winner.PLAYER2;
             }
         }
-        //Right Check
+        //Right Diagonal Check
         if(col <= x - 4 && row <= y - 4){
             int player = board[col][row];
             int counter = 0;
@@ -224,7 +237,7 @@ public class GameLogic implements IGameLogic {
                 return player == 1 ? Winner.PLAYER1 : Winner.PLAYER2;
             }
         }
-        //Left Check
+        //Left Diagonal Check
         if(col >= x - 4 && row <= y - 4){
             int player = board[col][row];
             int counter = 0;
@@ -241,122 +254,137 @@ public class GameLogic implements IGameLogic {
         }
         return Winner.NOT_FINISHED;
     }
-    private int countDiagonalRight(int[][] state, int[][] scoringMatrix, int col, int player){
-        int score = 1;
-        int counter = 0;
-        int currentScore = 0;
-        for(int row = 0; row < y; row++){
-            int cellValue = state[col][row];
-            if(cellValue == player){
-                counter++;
-                score *= 2;
-                currentScore += score;
-                scoringMatrix[col][row] += score;
-            }
-            else if(cellValue == 0){
-                if(counter < 5) {
-                    score *= 2;
-                    currentScore += score;
-                    scoringMatrix[col][row] += score;
-                }
-            }
-            else{
-                if(counter < 4){
-                    scoringMatrix[col][row] -= currentScore;
-                }
+    private int countDiagonalRight(int[][] state, int[][] scoringMatrix, int col, int row, int player){
+        int score = 0;
+        int currentRow = row;
+        int currentColumn = col;
+        int distance = 1;
+        int connected = 0;
+        while(currentRow >= 0) {
+            if(currentColumn > x - 1){
                 break;
             }
+            int cellValue = state[currentColumn][currentRow];
+            if (cellValue == 0) {
+                distance++;
+                if(distance == 3){
+                    distance = 1;
+                    connected = 0;
+                }
+            }
+            if (cellValue == player) {
+                if(distance > 1){
+                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                }
+                connected++;
+                if(connected > 0){
+                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                }
+                distance = 1;
+            }
+            else{
 
+            }
+            currentColumn++;
+            currentRow--;
         }
-        return currentScore;
+
+        return score;
     }
-    private int countDiagonalLeft(int[][] state, int[][] scoringMatrix, int col, int player){
-        int score = 1;
-        int counter = 0;
-        int currentScore = 0;
-        for(int row = 0; row < y; row++){
-            int cellValue = state[col][row];
-            if(cellValue == player){
-                counter++;
-                score *= 2;
-                currentScore += score;
-                scoringMatrix[col][row] += score;
-            }
-            else if(cellValue == 0){
-                if(counter < 5) {
-                    score *= 2;
-                    currentScore += score;
-                    scoringMatrix[col][row] += score;
-                }
-            }
-            else{
-                if(counter < 4){
-                    scoringMatrix[col][row] -= currentScore;
-                }
+    private int countDiagonalLeft(int[][] state, int[][] scoringMatrix, int col, int row, int player){
+        int score = 0;
+        int currentRow = row;
+        int currentColumn = col;
+        int distance = 1;
+        int connected = 0;
+        while(currentRow >= 0) {
+            if(currentColumn <= 0){
                 break;
             }
+            int cellValue = state[currentColumn][currentRow];
+            if (cellValue == 0) {
+                distance++;
+                if(distance == 3){
+                    distance = 1;
+                    connected = 0;
+                }
+            }
+            if (cellValue == player) {
+                if(distance > 1){
+                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                }
+                connected++;
+                if(connected > 0){
+                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                }
+                distance = 1;
+            }
+            else{
 
+            }
+            currentColumn--;
+            currentRow--;
         }
-        return currentScore;
+
+        return score;
     }
     private int countVertical(int[][] state, int[][] scoringMatrix, int col, int player){
-        int score = 1;
-        int counter = 0;
-        int currentScore = 0;
-        for(int row = 0; row < y; row++){
+        int score = 0;
+        int distance = 1;
+        int connected = 0;
+        for(int row = 0; row < y; row++) {
             int cellValue = state[col][row];
-            if(cellValue == player){
-                counter++;
-                score *= 2;
-                currentScore += score;
-                scoringMatrix[col][row] += score;
-            }
-            else if(cellValue == 0){
-                if(counter < 5) {
-                    score *= 2;
-                    currentScore += score;
-                    scoringMatrix[col][row] += score;
+            if (cellValue == 0) {
+                distance++;
+                if(distance == 3){
+                    distance = 1;
+                    connected = 0;
                 }
+            }
+            if (cellValue == player) {
+                if(distance > 1){
+                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                }
+                connected++;
+                if(connected > 0){
+                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                }
+                distance = 1;
             }
             else{
-                if(counter < 4){
-                    scoringMatrix[col][row] -= currentScore;
-                }
-                break;
-            }
 
+            }
         }
-        return currentScore;
+        return score;
     }
     private int countHorizontal(int[][] state, int[][] scoringMatrix, int row, int player){
-        int score = 1;
-        int counter = 0;
-
-        int currentScore = 0;
-        for(int col = 0; col < x; col++){
+        int score = 0;
+        int distance = 1;
+        int connected = 0;
+        for(int col = 0; col < y; col++) {
             int cellValue = state[col][row];
-            if(cellValue == player){
-                counter++;
-                score *= 2;
-                currentScore += score;
-                scoringMatrix[col][row] += score;
-            }
-            else if(cellValue == 0){
-                if(counter < 5) {
-                    score *= 2;
-                    currentScore += score;
-                    scoringMatrix[col][row] += score;
+            if (cellValue == 0) {
+                distance++;
+                if(distance == 3){
+                    distance = 1;
+                    connected = 0;
                 }
+            }
+            if (cellValue == player) {
+                if(distance > 1){
+                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                }
+                connected++;
+                if(connected > 0){
+                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                }
+                distance = 1;
             }
             else{
-                if(counter < 4){
-                    scoringMatrix[col][row] -= currentScore;
-                }
-                break;
-            }
 
+            }
         }
-        return currentScore;
+        return score;
     }
 
     private boolean isFull(int column){
