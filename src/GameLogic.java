@@ -25,19 +25,7 @@ public class GameLogic implements IGameLogic {
     }
     //Called by the GUI Class
     public Winner gameFinished() {
-        for(int col = 0; col < x; col++){
-            for(int row = 0; row < y; row++){
-                if(gameBoard[col][row] != 0){
-                    Winner winner = fourConnected(gameBoard, col, row);
-                    if(!winner.equals(Winner.NOT_FINISHED)){
-                        //System.out.println( winner + " Wins on Col: " + col + " Row: " + row);
-                        return winner;
-                    }
-                }
-            }
-        }
-
-        return Winner.NOT_FINISHED;
+        return gameFinished(gameBoard);
     }
 
     //Used by minimax functions to determine if their current state is terminal.
@@ -62,7 +50,7 @@ public class GameLogic implements IGameLogic {
 
         if(updateBoard(gameBoard, column, playerID)){
             turns++;
-            //printBoard(scoringMatrix(gameBoard, playerID));
+            printBoard(scoringMatrix(gameBoard, playerID));
             //System.out.println("column " + column + " playerID " + playerID);
             //printBoard(gameBoard);
         }
@@ -301,37 +289,48 @@ public class GameLogic implements IGameLogic {
         }
         return Winner.NOT_FINISHED;
     }
+
     private int countDiagonalRight(int[][] state, int[][] scoringMatrix, int col, int row, int player){
-        int score = 0;
         int currentRow = row;
         int currentColumn = col;
+        int score = 0;
+        //Represents distance from wall to player, or distance between two coins by the same player
         int distance = 0;
+        //Represents Connected coins
         int connected = 0;
-
         //Loop untill it hits the top row of the board
         while(currentRow >= 0) {
+            //Or hits right wall
             if(currentColumn > x - 1){
                 break;
             }
             int cellValue = state[currentColumn][currentRow];
+            //If cell is empty
             if (cellValue == 0) {
                 distance++;
-                if(distance == 3){
+                //If gap is too large
+                if(distance > 2){
                     distance = 0;
+                }
+                //If it interrupts connected coins, it scores last visited cell
+                if(connected > 0){
+                    scoringMatrix[currentColumn - 1][currentRow+1] +=  Math.pow(2.0, connected);
                     connected = 0;
                 }
             }
-            //If the value is the current player
+            //If the cell is occupied by current player
             if (cellValue == player) {
                 if(distance > 1){
-                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                    scoringMatrix[currentColumn][currentRow] += 8 / (int)Math.pow(2.0, distance);
                 }
                 connected++;
-                if(connected > 0){
-                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                //If it hits maximum connected it scores those
+                if(connected == 3){
+                    scoringMatrix[currentColumn][currentRow] += Math.pow(2.0, connected);
                 }
                 distance = 0;
             }
+            //If cell is occupied by opponent
             else{
                 connected = 0;
                 distance = 0;
@@ -344,9 +343,9 @@ public class GameLogic implements IGameLogic {
         return score;
     }
     private int countDiagonalLeft(int[][] state, int[][] scoringMatrix, int col, int row, int player){
-        int score = 0;
         int currentRow = row;
         int currentColumn = col;
+        int score = 0;
         int distance = 0;
         int connected = 0;
 
@@ -356,21 +355,26 @@ public class GameLogic implements IGameLogic {
             if(currentColumn <= 0){
                 break;
             }
+
+            //Same procedure as in countDiagonalRight
             int cellValue = state[currentColumn][currentRow];
             if (cellValue == 0) {
                 distance++;
-                if(distance == 3){
+                if(distance > 2){
                     distance = 0;
+                }
+                if(connected > 0){
+                    scoringMatrix[currentColumn + 1][currentRow+1] +=  Math.pow(2.0, connected);
                     connected = 0;
                 }
             }
             if (cellValue == player) {
                 if(distance > 1){
-                    scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
+                    scoringMatrix[currentColumn][currentRow] += 8 / (int)Math.pow(2.0, distance);
                 }
                 connected++;
-                if(connected > 0){
-                    scoringMatrix[col][row] += Math.pow(2.0, connected);
+                if(connected == 3){
+                    scoringMatrix[currentColumn][currentRow] += Math.pow(2.0, connected);
                 }
                 distance = 0;
             }
@@ -378,7 +382,6 @@ public class GameLogic implements IGameLogic {
                 connected = 0;
                 distance = 0;
             }
-            //Move one row up the board and a column to the left
             currentColumn--;
             currentRow--;
         }
@@ -390,13 +393,17 @@ public class GameLogic implements IGameLogic {
         int distance = 0;
         int connected = 0;
 
-
         for(int row = 0; row < y; row++) {
             int cellValue = state[col][row];
+            //Same procedure as in countDiagonalRight
             if (cellValue == 0) {
                 distance++;
                 if(distance == 3){
                     distance = 0;
+                    connected = 0;
+                }
+                if(connected > 0){
+                    scoringMatrix[col][row-1] +=  Math.pow(2.0, connected);
                     connected = 0;
                 }
             }
@@ -405,7 +412,7 @@ public class GameLogic implements IGameLogic {
                     scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
                 }
                 connected++;
-                if(connected > 0){
+                if(connected == 3){
                     scoringMatrix[col][row] += Math.pow(2.0, connected);
                 }
                 distance = 0;
@@ -419,35 +426,32 @@ public class GameLogic implements IGameLogic {
     }
     private int countHorizontal(int[][] state, int[][] scoringMatrix, int row, int player){
         int score = 0;
-        //Represents distance from wall to player, or distance between two coins by the same player
         int distance = 0;
-        //Represents Connected coins
         int connected = 0;
 
-        //For every column
+
         for(int col = 0; col < y; col++) {
+            //Same procedure as in countDiagonalRight
             int cellValue = state[col][row];
-            //If the cell is empty
+
             if (cellValue == 0) {
-                //Increment Distance
                 distance++;
                 connected = 0;
-                //If the distance is 3 then reset max
                 if(distance > 2){
                     distance = 0;
                 }
+                if(connected > 0){
+                    scoringMatrix[col-1][row] +=  Math.pow(2.0, connected);
+                    connected = 0;
+                }
             }
-            //If cell is occupied by player
             if (cellValue == player) {
-                //And there is a valid distance from wall or between 2 coins
                 if(distance > 1){
-                    //Add 8 / 2 to the power of the distance (4 or 2) points to the scoring matrix
                     scoringMatrix[col][row] += 8 / (int)Math.pow(2.0, distance);
                 }
 
                 connected++;
-                //For connected pieces
-                if(connected > 0){
+                if(connected == 3){
 
                     scoringMatrix[col][row] += Math.pow(2.0, connected);
                 }
